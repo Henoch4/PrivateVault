@@ -2,9 +2,27 @@ import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 import { nox } from "@iexec-nox/nox-hardhat-plugin";
 
+// Hardhat v3 exposes the viem API under `connection.viem`. Attach the
+// convenience accessors (`deployContract`, `walletClient`, `viem.test`) that
+// this suite was written against, so calls stay concise and consistent.
+async function makeConnection() {
+  const connection = await nox.connect();
+  const viem = connection.viem as any;
+  if (!(connection as any).deployContract) {
+    (connection as any).deployContract = (...args: any[]) => viem.deployContract(...args);
+  }
+  if (!(connection as any).walletClient) {
+    (connection as any).walletClient = (await viem.getWalletClients())[0];
+  }
+  if (!viem.test) {
+    viem.test = await viem.getTestClient();
+  }
+  return connection;
+}
+
 describe("PrivateVault", () => {
   it("deploys and initializes with zero confidential total deposits", async () => {
-    const connection = await nox.connect();
+    const connection = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
@@ -23,7 +41,7 @@ describe("PrivateVault", () => {
   });
 
   it("accepts an encrypted deposit and mints confidential shares", async () => {
-    const connection = await nox.connect();
+    const connection = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
@@ -58,7 +76,7 @@ describe("PrivateVault", () => {
   });
 
   it("allows user to decrypt their own confidential balance", async () => {
-    const connection = await nox.connect();
+    const connection = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
@@ -91,7 +109,7 @@ describe("PrivateVault", () => {
   });
 
   it("processes a two-step withdrawal: request + finalize", async () => {
-    const connection = await nox.connect();
+    const connection = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
@@ -142,7 +160,7 @@ describe("PrivateVault", () => {
   });
 
   it("reverts on double-finalize of the same withdrawal request", async () => {
-    const connection = await nox.connect();
+    const connection = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
@@ -184,7 +202,7 @@ describe("PrivateVault", () => {
   });
 
   it("reverts on zero-amount deposit", async () => {
-    const connection = await nox.connect();
+    const connection = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
@@ -210,7 +228,7 @@ describe("PrivateVault", () => {
   });
 
   it("allows owner to expire an expired withdrawal request", async () => {
-    const connection = await nox.connect();
+    const connection = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
@@ -248,8 +266,8 @@ describe("PrivateVault", () => {
   });
 
   it("reverts if non-owner tries to inject yield", async () => {
-    const connection = await nox.connect();
-    const attacker = await nox.connect();
+    const connection = await makeConnection();
+    const attacker = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
@@ -282,8 +300,8 @@ describe("PrivateVault", () => {
   });
 
   it("reverts if non-owner non-user tries to finalize withdrawal", async () => {
-    const connection = await nox.connect();
-    const attacker = await nox.connect();
+    const connection = await makeConnection();
+    const attacker = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
@@ -330,7 +348,7 @@ describe("PrivateVault", () => {
   });
 
   it("allows owner to inject yield", async () => {
-    const connection = await nox.connect();
+    const connection = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
@@ -364,7 +382,7 @@ describe("PrivateVault", () => {
   });
 
   it("enforces timelock on second consecutive yield injection", async () => {
-    const connection = await nox.connect();
+    const connection = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
@@ -410,7 +428,7 @@ describe("PrivateVault", () => {
   });
 
   it("enforces max yield injection limit", async () => {
-    const connection = await nox.connect();
+    const connection = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
@@ -442,7 +460,7 @@ describe("PrivateVault", () => {
   });
 
   it("rejects malformed proof in deposit (malformed proof fuzz)", async () => {
-    const connection = await nox.connect();
+    const connection = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
@@ -472,8 +490,8 @@ describe("PrivateVault", () => {
   });
 
   it("prevents front-running in withdraw (concurrent tx race)", async () => {
-    const connection = await nox.connect();
-    const attacker = await nox.connect();
+    const connection = await makeConnection();
+    const attacker = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
@@ -541,7 +559,7 @@ describe("PrivateVault", () => {
   });
 
   it("resists clock manipulation in withdrawal deadline", async () => {
-    const connection = await nox.connect();
+    const connection = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
@@ -599,7 +617,7 @@ describe("PrivateVault", () => {
   });
 
   it("NonReentrant guard persists on revert", async () => {
-    const connection = await nox.connect();
+    const connection = await makeConnection();
 
     const mockToken = await connection.deployContract("MockERC20", [
       "Mock USDC",
