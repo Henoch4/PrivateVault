@@ -1,6 +1,13 @@
 import { strict as assert } from "node:assert";
-import { describe, it, beforeEach } from "node:test";
+import { createRequire } from "node:module";
+import { before, describe, it, beforeEach } from "node:test";
 import { nox } from "@iexec-nox/nox-hardhat-plugin";
+import { getContract } from "viem";
+
+const require = createRequire(import.meta.url);
+
+// Canonical NoxCompute address etched by the plugin's local Nox stack.
+const NOX_COMPUTE_ADDRESS = "0x75C6AF4430cc474b1bb9b8540b7E46D6f8e1C685" as `0x${string}`;
 
 // Hardhat v3 exposes the viem API under `connection.viem`. Attach the
 // convenience accessors (`deployContract`, `walletClient`, `viem.test`) that
@@ -110,7 +117,33 @@ async function waitForDecrypt(
   throw new Error(`decrypt returned no value for handle ${handle}`);
 }
 
+// The Nox proof-expiration default is 1h (NoxCompute constructor). The suite's
+// time-travel tests advance the chain clock by days, which would make every
+// proof created afterwards look expired (block.timestamp > createdAt + 1h).
+// Extend the window once via the admin/upgrader account so those tests pass.
+async function extendProofExpiration(connection: any) {
+  const artifact = require(
+    "@iexec-nox/nox-protocol-contracts/artifacts/contracts/NoxCompute.sol/NoxCompute.json"
+  );
+  const publicClient = await connection.viem.getPublicClient();
+  const compute = getContract({
+    address: NOX_COMPUTE_ADDRESS,
+    abi: artifact.abi,
+    client: { public: publicClient, wallet: connection.walletClient },
+  }) as any;
+  const THIRTY_DAYS = 30n * 24n * 60n * 60n;
+  const current = (await compute.read.proofExpirationDuration()) as bigint;
+  if (current < THIRTY_DAYS) {
+    await compute.write.setProofExpirationDuration([THIRTY_DAYS]);
+  }
+}
+
 describe("PrivateVault", () => {
+  before(async () => {
+    connectionAccountIndex = 0;
+    await extendProofExpiration(await makeConnection());
+  });
+
   beforeEach(() => {
     connectionAccountIndex = 0;
   });
@@ -351,7 +384,7 @@ describe("PrivateVault", () => {
     const requestId = await vault.read.withdrawalCount();
 
     await connection.viem.test.increaseTime({ seconds: 3n * 24n * 60n * 60n + 1n });
-    await connection.viem.test.mine();
+    await connection.viem.test.mine({ blocks: 1 });
 
     await vault.write.expireWithdrawal([requestId]);
 
@@ -515,7 +548,7 @@ describe("PrivateVault", () => {
 
     // Advance time past the timelock
     await connection.viem.test.increaseTime({ seconds: 24n * 60n * 60n + 1n });
-    await connection.viem.test.mine();
+    await connection.viem.test.mine({ blocks: 1 });
 
     // Now it should succeed
     await vault.write.injectYield([yieldAmount, handle2, proof2]);
@@ -695,7 +728,7 @@ describe("PrivateVault", () => {
 
     // Jump clock forward past deadline
     await connection.viem.test.increaseTime({ seconds: 3n * 24n * 60n * 60n + 1n });
-    await connection.viem.test.mine();
+    await connection.viem.test.mine({ blocks: 1 });
 
     // finalizeWithdraw reverts — deadline passed
     await assert.rejects(

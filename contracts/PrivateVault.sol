@@ -123,6 +123,7 @@ contract PrivateVault is ERC7984 {
 
         Nox.allowPublicDecryption(amount);
 
+        withdrawalCount += 1;
         requestId = withdrawalCount;
         withdrawalRequests[requestId] = WithdrawalRequest({
             amount: amount,
@@ -130,7 +131,6 @@ contract PrivateVault is ERC7984 {
             deadline: block.timestamp + WITHDRAWAL_DEADLINE,
             finalized: false
         });
-        withdrawalCount = requestId + 1;
 
         emit WithdrawalRequested(requestId, msg.sender);
     }
