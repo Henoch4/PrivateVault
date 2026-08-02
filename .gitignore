@@ -1,0 +1,17 @@
+node_modules
+.env
+coverage
+cache
+dist
+artifacts
+typechain-types
+frontend/.next
+frontend/node_modules
+frontend/next-dev.log
+frontend/tsconfig.tsbuildinfo
+
+# Playwright artifacts (CI-generated, not committed)
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/e2e/**/__screenshots__/
