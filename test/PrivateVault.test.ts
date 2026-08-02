@@ -1,10 +1,16 @@
 import { strict as assert } from "node:assert";
-import { describe, it } from "node:test";
+import { describe, it, beforeEach } from "node:test";
 import { nox } from "@iexec-nox/nox-hardhat-plugin";
 
 // Hardhat v3 exposes the viem API under `connection.viem`. Attach the
 // convenience accessors (`deployContract`, `walletClient`, `viem.test`) that
 // this suite was written against, so calls stay concise and consistent.
+// Each call is assigned a distinct account (first call -> account[0], second
+// call -> account[1], ...) so tests that pit two parties against each other get
+// genuinely different senders. `beforeEach` resets the counter so every test's
+// first connection is always account[0], the account the plugin's
+// encryptInput/decrypt helpers are bound to.
+let connectionAccountIndex = 0;
 async function makeConnection() {
   const connection = await nox.connect();
   const viem = connection.viem as any;
@@ -12,7 +18,10 @@ async function makeConnection() {
     (connection as any).deployContract = (...args: any[]) => viem.deployContract(...args);
   }
   if (!(connection as any).walletClient) {
-    (connection as any).walletClient = (await viem.getWalletClients())[0];
+    const walletClients = await viem.getWalletClients();
+    (connection as any).walletClient =
+      walletClients[connectionAccountIndex % walletClients.length];
+    connectionAccountIndex++;
   }
   if (!viem.test) {
     viem.test = await viem.getTestClient();
@@ -20,36 +29,92 @@ async function makeConnection() {
   return connection;
 }
 
-// Retry wrappers for off-chain handle resolution. The plugin's `publicDecrypt`
-// and `decrypt` already wait for handles, but CI can be slower than local; these
-// give the off-chain stack a few extra seconds before failing.
-async function waitForPublicDecrypt(handle: `0x${string}`, attempts = 200, delayMs = 100) {
-  for (let i = 0; i < attempts; i++) {
-    try {
-      const res = await nox.publicDecrypt(handle);
-      if (res && res.value !== undefined) return res;
-    } catch {
-      // handle not resolved yet; retry
-    }
-    await new Promise((r) => setTimeout(r, delayMs));
+// Solidity flattens `mapping(...) public` struct getters into separate return
+// values, which viem decodes as a plain array. Normalize it back to the named
+// object shape this suite was written against.
+async function readWithdrawalRequest(vault: any, requestId: bigint) {
+  const raw = await vault.read.withdrawalRequests([requestId]);
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
+    const r = raw as readonly unknown[];
+    return { amount: r[0], owner: r[1], deadline: r[2], finalized: r[3] };
   }
-  throw new Error("Handles not resolved after retries");
+  return raw;
 }
 
-async function waitForDecrypt(handle: `0x${string}`, attempts = 200, delayMs = 100) {
+// Retry wrappers for off-chain handle resolution. Poll the handle gateway's
+// cheap `/v0/public/handles/status` endpoint (the same one the plugin uses
+// internally) before invoking the heavier `publicDecrypt`/`decrypt`, so a
+// not-yet-computed handle is retried gently instead of flooding the gateway.
+function handleGatewayStatusUrl() {
+  const port = process.env.NOX_HANDLE_GATEWAY_HOST_PORT;
+  if (port === undefined || port === "") {
+    throw new Error("NOX_HANDLE_GATEWAY_HOST_PORT not set; is the Nox stack started?");
+  }
+  return `http://127.0.0.1:${port}/v0/public/handles/status`;
+}
+
+async function waitForHandlesResolved(
+  handles: string[],
+  attempts = 180,
+  delayMs = 1000
+) {
+  const url = handleGatewayStatusUrl();
   for (let i = 0; i < attempts; i++) {
     try {
-      const res = await nox.decrypt(handle);
-      if (res && res.value !== undefined) return res;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ handles }),
+      });
+      if (response.ok) {
+        const data = (await response.json()) as {
+          payload?: { statuses?: Array<{ handle: string; resolved: boolean }> };
+        };
+        const resolvedByHandle = new Map(
+          (data.payload?.statuses ?? []).map((s) => [
+            s.handle.toLowerCase(),
+            s.resolved,
+          ])
+        );
+        if (handles.every((h) => resolvedByHandle.get(h.toLowerCase()) === true)) {
+          return;
+        }
+      }
     } catch {
-      // handle not resolved yet; retry
+      // gateway not ready yet; retry
     }
     await new Promise((r) => setTimeout(r, delayMs));
   }
-  throw new Error("Handles not resolved after retries");
+  throw new Error(`Handles not resolved after retries: ${handles.join(", ")}`);
+}
+
+async function waitForPublicDecrypt(
+  handle: `0x${string}`,
+  attempts = 180,
+  delayMs = 1000
+) {
+  await waitForHandlesResolved([handle], attempts, delayMs);
+  const res = await nox.publicDecrypt(handle);
+  if (res && res.value !== undefined) return res;
+  throw new Error(`publicDecrypt returned no value for handle ${handle}`);
+}
+
+async function waitForDecrypt(
+  handle: `0x${string}`,
+  attempts = 180,
+  delayMs = 1000
+) {
+  await waitForHandlesResolved([handle], attempts, delayMs);
+  const res = await nox.decrypt(handle);
+  if (res && res.value !== undefined) return res;
+  throw new Error(`decrypt returned no value for handle ${handle}`);
 }
 
 describe("PrivateVault", () => {
+  beforeEach(() => {
+    connectionAccountIndex = 0;
+  });
+
   it("deploys and initializes with zero confidential total deposits", async () => {
     const connection = await makeConnection();
 
@@ -166,7 +231,7 @@ describe("PrivateVault", () => {
     await vault.write.requestWithdraw([withdrawHandle, withdrawProof]);
 
     const requestId = await vault.read.withdrawalCount();
-    const request = await vault.read.withdrawalRequests([requestId]);
+    const request = await readWithdrawalRequest(vault, requestId);
 
     assert.equal(request.finalized, false);
 
@@ -181,7 +246,7 @@ describe("PrivateVault", () => {
       decryptionProof,
     ]);
 
-    const finalizedRequest = await vault.read.withdrawalRequests([requestId]);
+    const finalizedRequest = await readWithdrawalRequest(vault, requestId);
     assert.equal(finalizedRequest.finalized, true);
 
     const vaultBalance = await mockToken.read.balanceOf([vault.address]);
@@ -217,7 +282,7 @@ describe("PrivateVault", () => {
     await vault.write.requestWithdraw([withdrawHandle, withdrawProof]);
 
     const requestId = await vault.read.withdrawalCount();
-    const request = await vault.read.withdrawalRequests([requestId]);
+    const request = await readWithdrawalRequest(vault, requestId);
     const { value: decryptedAmount, decryptionProof } = await waitForPublicDecrypt(
       request.amount as `0x${string}`
     );
@@ -285,12 +350,12 @@ describe("PrivateVault", () => {
 
     const requestId = await vault.read.withdrawalCount();
 
-    await connection.viem.test.increaseTime(3n * 24n * 60n * 60n + 1n);
+    await connection.viem.test.increaseTime({ seconds: 3n * 24n * 60n * 60n + 1n });
     await connection.viem.test.mine();
 
     await vault.write.expireWithdrawal([requestId]);
 
-    const request = await vault.read.withdrawalRequests([requestId]);
+    const request = await readWithdrawalRequest(vault, requestId);
     assert.equal(request.finalized, true);
   });
 
@@ -358,7 +423,7 @@ describe("PrivateVault", () => {
     await vault.write.requestWithdraw([withdrawHandle, withdrawProof]);
 
     const requestId = await vault.read.withdrawalCount();
-    const request = await vault.read.withdrawalRequests([requestId]);
+    const request = await readWithdrawalRequest(vault, requestId);
     const { value: decryptedAmount, decryptionProof } = await waitForPublicDecrypt(
       request.amount as `0x${string}`
     );
@@ -449,7 +514,7 @@ describe("PrivateVault", () => {
     );
 
     // Advance time past the timelock
-    await connection.viem.test.increaseTime(24n * 60n * 60n + 1n);
+    await connection.viem.test.increaseTime({ seconds: 24n * 60n * 60n + 1n });
     await connection.viem.test.mine();
 
     // Now it should succeed
@@ -560,7 +625,7 @@ describe("PrivateVault", () => {
     });
 
     const requestId = await vault.read.withdrawalCount();
-    const request = await vault.read.withdrawalRequests([requestId]);
+    const request = await readWithdrawalRequest(vault, requestId);
     const { value: decryptedAmount, decryptionProof } = await waitForPublicDecrypt(
       request.amount as `0x${string}`
     );
@@ -623,13 +688,13 @@ describe("PrivateVault", () => {
     await vault.write.requestWithdraw([wdHandle, wdProof]);
 
     const requestId = await vault.read.withdrawalCount();
-    const request = await vault.read.withdrawalRequests([requestId]);
+    const request = await readWithdrawalRequest(vault, requestId);
     const { value: decryptedAmount, decryptionProof } = await waitForPublicDecrypt(
       request.amount as `0x${string}`
     );
 
     // Jump clock forward past deadline
-    await connection.viem.test.increaseTime(3n * 24n * 60n * 60n + 1n);
+    await connection.viem.test.increaseTime({ seconds: 3n * 24n * 60n * 60n + 1n });
     await connection.viem.test.mine();
 
     // finalizeWithdraw reverts — deadline passed
@@ -641,7 +706,7 @@ describe("PrivateVault", () => {
     // Owner can expire the withdrawal
     await vault.write.expireWithdrawal([requestId]);
 
-    const withdrawal = await vault.read.withdrawalRequests([requestId]);
+    const withdrawal = await readWithdrawalRequest(vault, requestId);
     assert.equal(withdrawal.finalized, true);
   });
 
