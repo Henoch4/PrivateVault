@@ -23,3 +23,10 @@ jobs:
 
       - name: Run Nox test suite
         run: npx hardhat test
+
+      - name: Print off-chain log on failure
+        if: failure()
+        run: |
+          echo "--- offchain-services.log ---"
+          cat offchain-services.log || true
+          echo "--- end ---"

@@ -197,6 +197,7 @@ contract PrivateVault is ERC7984 {
     }
 
     function _ensurePubliclyDecryptable(euint256 value) internal {
+        Nox.allowThis(value);
         if (!Nox.isPubliclyDecryptable(value)) {
             Nox.allowPublicDecryption(value);
         }
