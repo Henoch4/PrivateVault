@@ -98,7 +98,7 @@ export function DepositForm() {
 
   return (
     <div className="grid grid-2">
-      <form className="card" onSubmit={handleApprove}>
+      <form className="card card-accent" onSubmit={handleApprove}>
         <h2 className="card-title">Step 1: Approve</h2>
         <p className="card-subtitle">Authorize the vault to spend tokens</p>
 
@@ -142,7 +142,7 @@ export function DepositForm() {
         />
       </form>
 
-      <form className="card" onSubmit={handleDeposit}>
+      <form className="card card-accent" onSubmit={handleDeposit}>
         <h2 className="card-title">Step 2: Deposit</h2>
         <p className="card-subtitle">Submit the encrypted deposit</p>
 

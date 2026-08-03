@@ -101,7 +101,7 @@ export function WithdrawForm() {
 
   return (
     <div className="grid grid-2">
-      <form className="card" onSubmit={handleRequest}>
+      <form className="card card-accent" onSubmit={handleRequest}>
         <h2 className="card-title">Step 1: Request</h2>
         <p className="card-subtitle">
           Creates a confidential withdrawal request. Invisible until the 3-day
@@ -149,7 +149,7 @@ export function WithdrawForm() {
         />
       </form>
 
-      <form className="card" onSubmit={handleFinalize}>
+      <form className="card card-accent" onSubmit={handleFinalize}>
         <h2 className="card-title">Step 2: Finalize</h2>
         <p className="card-subtitle">
           After the cooldown expires, decrypt the amount and finalize.

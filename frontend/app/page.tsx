@@ -54,9 +54,9 @@ function Landing() {
           Private<span className="text-gradient">Vault</span>
         </h1>
         <p className="lede">
-          A confidential ERC-7984 vault that protects institutional positions
-          from MEV. Encrypted in a TEE on iExec Nox. No position leakage, no
-          visible exit strategy.
+          Institutional-grade confidential DeFi vault on iExec Nox.
+          Deposits and withdrawals are encrypted in a TEE — invisible
+          to MEV searchers until the cooldown expires.
         </p>
         <div className="hero-stats" aria-label="Product facts">
           <div className="hero-stat">
@@ -72,7 +72,7 @@ function Landing() {
             <div className="metric-value">Attested TEE</div>
           </div>
           <div className="hero-stat">
-            <div className="metric-label">Position leakage</div>
+            <div className="metric-label">Leakage</div>
             <div className="metric-value">Zero</div>
           </div>
         </div>
@@ -81,10 +81,10 @@ function Landing() {
       <div className="callout" role="note">
         <Lock aria-hidden="true" />
         <p>
-          <strong>The differentiator:</strong> while private RPCs still reveal
-          that a withdrawal happened and its approximate amount, PrivateVault
-          hides the withdrawal entirely until the 3-day cooldown expiry. Even
-          then, only the holder can decrypt the amount.
+          <strong>The differentiator:</strong> private RPCs reveal that a
+          withdrawal happened and its approximate amount. PrivateVault
+          hides the withdrawal entirely until the 3-day cooldown expiry.
+          Even then, only the holder can decrypt the amount.
         </p>
       </div>
 

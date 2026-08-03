@@ -41,18 +41,18 @@ export function BalanceViewer() {
 
   return (
     <div className="grid grid-2">
-      <div className="card">
+      <div className="card card-accent">
         <h2 className="card-title">Confidential position</h2>
         <p className="card-subtitle">
           Total deposits, sealed in a TEE (ERC-7984)
         </p>
-        <div className="metric">
+        <div className="metric" style={{ marginBottom: "0.85rem" }}>
           <div className="metric-label">Confidential total deposited</div>
-          <div className="metric-value mono" style={{ fontSize: "0.85rem" }}>
+          <div className="metric-value mono" style={{ fontSize: "0.82rem" }}>
             {confidentialTotal ?? "-"}
           </div>
         </div>
-        <p className="field-hint" style={{ marginTop: "1rem" }}>
+        <p className="field-hint">
           <Tooltip label="The handle is a ciphertext reference. The actual balance is only decryptable through the Nox confidential computing stack by an authorized holder.">
             <Lock size={14} aria-label="Encrypted" />
           </Tooltip>{" "}
@@ -61,7 +61,7 @@ export function BalanceViewer() {
         </p>
       </div>
 
-      <div className="card">
+      <div className="card card-accent">
         <h2 className="card-title">Token balance</h2>
         <p className="card-subtitle">Public wallet token balance</p>
         <div className="metric">

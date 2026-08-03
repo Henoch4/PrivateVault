@@ -30,7 +30,7 @@ export default function RootLayout({
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      GitHub
+                      Repository
                     </a>
                   </li>
                   <li>
@@ -39,7 +39,16 @@ export default function RootLayout({
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      iExec
+                      iExec Nox
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://docs.nox.party"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Docs
                     </a>
                   </li>
                 </ul>

@@ -58,6 +58,7 @@ export function ConfigPanel() {
           value={vaultInput}
           onChange={(event) => setVaultInput(event.target.value)}
           aria-invalid={!vaultValid}
+          placeholder="0x…"
         />
         {!vaultValid ? (
           <span className="field-hint" style={{ color: "var(--color-accent-red)" }}>
@@ -77,6 +78,7 @@ export function ConfigPanel() {
           value={tokenInput}
           onChange={(event) => setTokenInput(event.target.value)}
           aria-invalid={!tokenValid}
+          placeholder="0x…"
         />
         {!tokenValid ? (
           <span className="field-hint" style={{ color: "var(--color-accent-red)" }}>
@@ -96,6 +98,7 @@ export function ConfigPanel() {
           value={noxInput}
           onChange={(event) => setNoxInput(event.target.value)}
           aria-invalid={!noxValid}
+          placeholder="0x…"
         />
         {!noxValid ? (
           <span className="field-hint" style={{ color: "var(--color-accent-red)" }}>
@@ -104,7 +107,7 @@ export function ConfigPanel() {
         ) : null}
       </div>
 
-      <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+      <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
         <button
           type="submit"
           className="btn btn-primary"
