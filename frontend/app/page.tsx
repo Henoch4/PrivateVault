@@ -36,7 +36,7 @@ const PROPS = [
   {
     icon: Wallet,
     title: "Confidential withdrawal timing",
-    body: "A withdrawal is invisible until the 3-day cooldown expires — and even then, only the holder can decrypt the amount.",
+    body: "A withdrawal stays invisible until the 3-day cooldown expiry. Only then, and only by the holder, can the amount be decrypted.",
   },
   {
     icon: Lock,
@@ -49,12 +49,33 @@ function Landing() {
   return (
     <>
       <section className="hero">
-        <h1>PrivateVault</h1>
+        <p className="eyebrow">MEV Protection Vault</p>
+        <h1>
+          Private<span className="text-gradient">Vault</span>
+        </h1>
         <p className="lede">
           A confidential ERC-7984 vault that protects institutional positions
           from MEV. Encrypted in a TEE on iExec Nox. No position leakage, no
           visible exit strategy.
         </p>
+        <div className="hero-stats" aria-label="Product facts">
+          <div className="hero-stat">
+            <div className="metric-label">Cooldown</div>
+            <div className="metric-value">3 days</div>
+          </div>
+          <div className="hero-stat">
+            <div className="metric-label">Standard</div>
+            <div className="metric-value">ERC-7984</div>
+          </div>
+          <div className="hero-stat">
+            <div className="metric-label">Compute</div>
+            <div className="metric-value">Attested TEE</div>
+          </div>
+          <div className="hero-stat">
+            <div className="metric-label">Position leakage</div>
+            <div className="metric-value">Zero</div>
+          </div>
+        </div>
       </section>
 
       <div className="callout" role="note">
@@ -62,8 +83,8 @@ function Landing() {
         <p>
           <strong>The differentiator:</strong> while private RPCs still reveal
           that a withdrawal happened and its approximate amount, PrivateVault
-          hides the withdrawal entirely until the 3-day cooldown expires — and
-          even then, only the holder can decrypt the amount.
+          hides the withdrawal entirely until the 3-day cooldown expiry. Even
+          then, only the holder can decrypt the amount.
         </p>
       </div>
 

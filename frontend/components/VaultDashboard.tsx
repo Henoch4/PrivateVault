@@ -48,7 +48,7 @@ export function VaultDashboard() {
         <div className="metric">
           <div className="metric-label">Withdrawal count</div>
           <div className="metric-value">
-            {withdrawalCount !== undefined ? withdrawalCount.toString() : "—"}
+            {withdrawalCount !== undefined ? withdrawalCount.toString() : "-"}
           </div>
         </div>
         <div className="metric">
@@ -58,7 +58,7 @@ export function VaultDashboard() {
         <div className="metric">
           <div className="metric-label">Vault owner</div>
           <div className="metric-value mono" style={{ fontSize: "0.85rem" }}>
-            {vaultOwner ?? "—"}
+            {vaultOwner ?? "-"}
           </div>
         </div>
       </div>
@@ -68,7 +68,7 @@ export function VaultDashboard() {
         <p>
           Withdrawals are <strong>invisible</strong> until the 3-day cooldown
           expires. During the cooldown the request exists on-chain but the
-          amount is encrypted — no MEV searcher can observe or front-run an
+          amount is encrypted, so no MEV searcher can observe or front-run an
           exit. Only the holder can decrypt the amount, even after expiry.
         </p>
         <Tooltip label="ERC-7984 confidential computing on iExec Nox: deposit and withdrawal amounts are sealed in a TEE and only decryptable by authorized holders.">

@@ -49,7 +49,7 @@ export function BalanceViewer() {
         <div className="metric">
           <div className="metric-label">Confidential total deposited</div>
           <div className="metric-value mono" style={{ fontSize: "0.85rem" }}>
-            {confidentialTotal ?? "—"}
+            {confidentialTotal ?? "-"}
           </div>
         </div>
         <p className="field-hint" style={{ marginTop: "1rem" }}>
@@ -67,7 +67,7 @@ export function BalanceViewer() {
         <div className="metric">
           <div className="metric-label">Wallet balance</div>
           <div className="metric-value">
-            {tokenBalance !== undefined ? formatUnits(tokenBalance, 18) : "—"}
+            {tokenBalance !== undefined ? formatUnits(tokenBalance, 18) : "-"}
           </div>
         </div>
       </div>
