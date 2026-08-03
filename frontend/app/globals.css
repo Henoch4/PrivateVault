@@ -56,13 +56,14 @@ html {
 
 html {
   height: 100%;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
   padding: 0;
   min-height: 100%;
-  height: 100%;
+  height: auto;
   overflow-x: hidden;
   background:
     radial-gradient(1100px 520px at 50% -8%, var(--bg-glow), transparent 70%),
@@ -91,12 +92,57 @@ a {
   max-width: 1080px;
   margin: 0 auto;
   padding: 0 1.5rem;
-  padding-bottom: 2rem;
+  padding-bottom: 3rem;
 }
 
 main {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
+
+.main-content {
+  flex: 1;
+}
+
+.footer {
+  border-top: 1px solid var(--color-border);
+  padding: 1rem 0;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.footer-brand {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.02em;
+}
+
+.footer-links {
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.footer-links a {
+  font-size: 0.8rem;
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.footer-links a:hover {
+  color: var(--color-text-primary);
+}
+
+/* Header */
 .header {
   display: flex;
   flex-wrap: wrap;

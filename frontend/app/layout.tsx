@@ -18,7 +18,34 @@ export default function RootLayout({
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <Providers>{children}</Providers>
+          <Providers>
+            <main className="container">
+              <div className="main-content">{children}</div>
+              <footer className="footer">
+                <span className="footer-brand">PrivateVault</span>
+                <ul className="footer-links">
+                  <li>
+                    <a
+                      href="https://github.com/Henoch4/PrivateVault"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      GitHub
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://iexec.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      iExec
+                    </a>
+                  </li>
+                </ul>
+              </footer>
+            </main>
+          </Providers>
         </ThemeProvider>
       </body>
     </html>
