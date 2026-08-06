@@ -49,22 +49,20 @@ export function VaultDashboard() {
         </div>
       </div>
 
-      <div className="metrics" aria-label="Vault metrics">
-        <div className="metric">
-          <div className="metric-label">Withdrawals</div>
-          <div className="metric-value">
+      <div className="ledger ledger-wide" aria-label="Vault metrics">
+        <div className="ledger-row">
+          <span className="ledger-label">Withdrawals</span>
+          <span className="ledger-value">
             {withdrawalCount !== undefined ? withdrawalCount.toString() : "-"}
-          </div>
+          </span>
         </div>
-        <div className="metric">
-          <div className="metric-label">Cooldown</div>
-          <div className="metric-value">3 days</div>
+        <div className="ledger-row">
+          <span className="ledger-label">Cooldown</span>
+          <span className="ledger-value">3 days</span>
         </div>
-        <div className="metric">
-          <div className="metric-label">Owner</div>
-          <div className="metric-value mono" style={{ fontSize: "0.82rem" }}>
-            {vaultOwner ?? "-"}
-          </div>
+        <div className="ledger-row">
+          <span className="ledger-label">Owner</span>
+          <span className="ledger-value ledger-value-mono">{vaultOwner ?? "-"}</span>
         </div>
       </div>
 
